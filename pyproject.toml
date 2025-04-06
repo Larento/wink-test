@@ -3,7 +3,7 @@ name = "wink-test"
 version = "0.1.0"
 description = "Default template for PDM package"
 authors = [{ name = "Иларион Ерченко", email = "turolretar@gmail.com" }]
-dependencies = ["fastapi>=0.115.12"]
+dependencies = ["fastapi>=0.115.12", "pydantic-settings>=2.8.1"]
 requires-python = "==3.13.*"
 readme = "README.md"
 license = { text = "MIT" }
