@@ -20,8 +20,8 @@ distribution = false
 dev = ["ruff>=0.11.4"]
 
 [tool.pdm.scripts]
-_.working_dir = "src"
-dev = "fastapi dev wink_test/main.py"
+dev = "fastapi dev src/wink_test/main.py"
+test = "python -m unittest discover tests -p '*.py'"
 
 [tool.ruff]
 target-version = "py313"
