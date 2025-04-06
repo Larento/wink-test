@@ -2,6 +2,11 @@
     "python.defaultInterpreterPath": ".venv/bin/python",
     "python.analysis.typeCheckingMode": "strict",
     "[python]": {
+        "editor.wordWrap": "bounded",
+        "editor.wordWrapColumn": 120,
+        "editor.rulers": [120],
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.fixAll": "always",
             "source.organizeImports": "always",
