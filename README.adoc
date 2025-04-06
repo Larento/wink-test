@@ -1,0 +1,3 @@
+= wink-test
+
+link:docs/task.pdf[Задание]
