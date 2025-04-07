@@ -3,8 +3,8 @@ from fractions import Fraction
 
 from pydantic import HttpUrl, ValidationError
 
-from src.wink_test.settings import Settings, parse_redirect_ratio
 from tests.utils import patch_environ
+from wink_test.settings import Settings, parse_redirect_ratio
 
 
 class TestSettingsWithPythonValues(unittest.TestCase):

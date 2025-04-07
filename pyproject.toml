@@ -14,10 +14,7 @@ license = { text = "MIT" }
 
 
 [dependency-groups]
-dev = [
-    "ruff>=0.11.4",
-    "httpx>=0.28.1",
-]
+dev = ["ruff>=0.11.4", "httpx>=0.28.1"]
 
 [tool.ruff]
 target-version = "py313"
@@ -72,5 +69,5 @@ distribution = false
 
 [tool.pdm.scripts]
 dev = "fastapi dev src/wink_test/main.py"
-test = "python -m unittest discover tests -p '*.py'"
-
+test.cmd = "python -m unittest discover tests -p '*.py'"
+test.env = { PYTHONPATH = "${PYTHONPATH}:${PDM_PROJECT_ROOT}/src" }
