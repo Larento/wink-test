@@ -1,8 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
+
+from wink_test.routers import balancer_api
 
 app = FastAPI()
 
 
-@app.get("/")
-def read_root():
-    return "Hello world"
+@app.get("/health")
+def health_check():
+    return Response(status_code=status.HTTP_200_OK)
+
+
+app.include_router(balancer_api.router)
