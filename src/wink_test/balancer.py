@@ -2,7 +2,7 @@ import math
 from fractions import Fraction
 from typing import Annotated, Any
 
-from pydantic import BaseModel, BeforeValidator, HttpUrl, PositiveInt, RedisDsn, TypeAdapter, UrlConstraints
+from pydantic import BaseModel, BeforeValidator, HttpUrl, PositiveInt, TypeAdapter, UrlConstraints
 
 __all__ = (
     "BalancerSettings",
@@ -52,11 +52,6 @@ class BalancerSettings(BaseModel):
     redirect_ratio: Annotated[Fraction, BeforeValidator(parse_redirect_ratio)]
     """
     Отношение редиректов на CDN и origin сервера.
-    """
-
-    redis_url: RedisDsn
-    """
-    URL хранилища Redis. В Redis хранится счетчик обработанных запросов. 
     """
 
 
