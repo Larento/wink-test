@@ -35,8 +35,7 @@ def parse_redirect_ratio(value: Any) -> Fraction:
                 cdn_redirect_count, origin_servers_redirect_count = map(int, value.split(":"))
             except ValueError:
                 raise ValueError(
-                    "Переданное значение не соответствует требуемому формату:\n\
-                      <кол-во редиректов на CDN>:<кол-во редиректов на origin сервера>"
+                    "Переданное значение не соответствует требуемому формату: <кол-во редиректов на CDN>:<кол-во редиректов на origin сервера>"
                 )
             positive_int_validator.validate_python(cdn_redirect_count)
             positive_int_validator.validate_python(origin_servers_redirect_count)

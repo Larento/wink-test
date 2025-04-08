@@ -34,13 +34,13 @@ router = APIRouter(prefix="/settings")
 
 
 @router.get("")
-@router.get("/")
+@router.get("/", include_in_schema=False)
 async def read_settings(settings: SettingsDependency):
     return BalancerSettings(cdn_host=settings.cdn_host, redirect_ratio=settings.redirect_ratio)
 
 
 @router.put("")
-@router.put("/")
+@router.put("/", include_in_schema=False)
 async def update_settings(settings: BalancerSettings, balancer_settings_db_model: BalancerSettingsDbModelDependency):
     if not balancer_settings_db_model:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
