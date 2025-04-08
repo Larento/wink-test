@@ -1,42 +1,21 @@
-import asyncio
 import re
-from functools import lru_cache
-from typing import Annotated, Any, Callable, Coroutine
+from typing import Any, Callable, Coroutine
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, FastAPI, HTTPException, Request, Response, status
+from fastapi.concurrency import asynccontextmanager
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 from pydantic import HttpUrl
 
 from wink_test.balancer import calculate_should_redirect_to_cdn
-from wink_test.dependencies import SettingsDependency
-
-
-class Counter:
-    def __init__(self):
-        self.value = 0
-        self.lock = asyncio.Lock()
-
-    async def get(self):
-        async with self.lock:
-            return self.value
-
-    async def increment(self):
-        async with self.lock:
-            self.value += 1
-
-    async def reset(self):
-        async with self.lock:
-            self.value = 0
-
-
-request_counter = Counter()
-
-
-@lru_cache
-def get_request_counter():
-    return request_counter
+from wink_test.dependencies import (
+    RequestCounterDependency,
+    SettingsDependency,
+    get_redis_connection,
+    get_request_counter,
+    get_settings,
+)
 
 
 class BalancerAPIRoute(APIRoute):
@@ -72,16 +51,26 @@ class BalancerAPIRoute(APIRoute):
         return custom_route_handler
 
 
-router = APIRouter(route_class=BalancerAPIRoute)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    settings = get_settings()
+    redis_connection = get_redis_connection(settings)  # type: ignore
+    counter = get_request_counter(redis_connection)
+    if counter:
+        await counter.reset()
+    yield
+
+
+router = APIRouter(route_class=BalancerAPIRoute, lifespan=lifespan)
 
 
 @router.get("/")
 async def balancer_root(
     video: HttpUrl,
-    request_counter: Annotated[Counter, Depends(get_request_counter)],
+    request_counter: RequestCounterDependency,
     settings: SettingsDependency,
 ):
-    if not settings:
+    if not settings or not request_counter:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     assert settings.cdn_host.host
