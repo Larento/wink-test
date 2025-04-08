@@ -1,3 +1,108 @@
 = wink-test
+:icons: font
+:toc:
+
+
+== Задание
 
 link:docs/task.pdf[Задание]
+
+
+== Запуск сервиса
+
+[source, shell]
+----
+git clone https://github.com/Larento/wink-test <1>
+cd wink-test/ <2>
+docker compose up -d <3>
+----
+<1> Клонировать репозиторий
+<2> Зайти в директорию проекта
+<3> Запустить сервисы через Docker Compose
+
+== Настройки сервиса
+
+В Compose файле прописаны переменные окружения с первоначальными настройками сервиса.
+
+[cols="3,3,5,1"]
+|===
+| Название переменной окружения | Пример значения | Описание | Обязательный параметр?
+
+|`BALANCER_CDN_HOST`
+|`http://cdn-host`
+|URL сервиса CDN.
+|✅ (только если в БД нет значения)
+
+|`BALANCER_REDIRECT_RATIO`
+|`3:1`
+|Отношение количества редиректов на CDN к количеству редиректов на origin сервера.
+|✅ (только если в БД нет значения)
+
+|`BALANCER_REDIS_URL`
+|`redis://localhost`
+|URL хранилища Redis. В Redis хранится счетчик обработанных запросов.
+|✅
+
+|`BALANCER_DATABASE_URL`
+|`postgres://localhost`
+|URL базы данных PostgreSQL.
+|❌
+
+|`BALANCER_DATABASE_USER`
+|`balancer`
+|Имя пользователя БД.
+|❌
+
+|`BALANCER_DATABASE_PASSWORD`
+|`postgres`
+|Пароль пользователя БД.
+|❌
+
+|`BALANCER_DATABASE_NAME`
+|`balancer`
+|Название используемой БД.
+|❌
+
+|===
+
+
+== Приоритет загрузки настроек
+
+Если сервису предоставлены настройки базы данных `BALANCER_DATABASE_*`, то настройки балансировщика будут браться сначала из БД, а если их там нет, то из переменных окружения.
+
+
+== API для чтения/редактирования настроек балансировщика
+
+API доступно только при наличии подключения к базе PostgreSQL. Пример запроса для изменения настроек:
+
+[source, shell]
+----
+curl -X PUT --json '{"cdn_host": "http://new-cdn-domain", "redirect-ratio": "3:1"}' <адрес-сервиса>/settings
+----
+
+== Оценка производительности сервиса
+
+Для проверки количества обрабатываемых запросов в секунду (RPS) был написан отдельный скрипт. Запустить его можно через:
+
+[source, shell]
+----
+pdm rps-test
+----
+
+Ниже приведены результаты теста для конфигурации: CPU - i7 3615QM (4 ядра), RAM - 16 GB. Сервис запущен с помощью Gunicorn на 9 воркерах.
+
+----
+[Round 1] Balancer handled 1000 requests in 2.413 seconds. RPS: 414
+[Round 2] Balancer handled 1000 requests in 0.886 seconds. RPS: 1128
+[Round 3] Balancer handled 1000 requests in 0.628 seconds. RPS: 1592
+[Round 4] Balancer handled 1000 requests in 0.587 seconds. RPS: 1704
+[Round 5] Balancer handled 1000 requests in 0.620 seconds. RPS: 1612
+[Round 6] Balancer handled 1000 requests in 0.648 seconds. RPS: 1543
+[Round 7] Balancer handled 1000 requests in 0.612 seconds. RPS: 1635
+[Round 8] Balancer handled 1000 requests in 0.590 seconds. RPS: 1694
+[Round 9] Balancer handled 1000 requests in 0.751 seconds. RPS: 1331
+[Round 10] Balancer handled 1000 requests in 0.635 seconds. RPS: 1574
+Median PRS: 1583.0
+----
+
+Видно, что сервис удовлетворяет требованиям по производительности, поставленным в задании. В то же время, данный тест не отражает реальной производительности сервиса: во-первых скрипт теста написан на Python, а во-вторых выполняется на той же машине, что и сервис балансировщика.
