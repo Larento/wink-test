@@ -26,9 +26,9 @@ class PostgresSettings(BaseModel):
     Пароль пользователя БД.
     """
 
-    database_name: str
+    name: str
     """
-    Название БД.
+    Название используемой БД.
     """
 
 
@@ -48,7 +48,7 @@ class Postgres:
                 dsn=str(self.settings.url),
                 user=self.settings.user,
                 password=self.settings.password,
-                database=self.settings.database_name,
+                database=self.settings.name,
             ) as pool:
                 self.pool = pool
                 yield

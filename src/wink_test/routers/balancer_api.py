@@ -14,8 +14,8 @@ from wink_test.dependencies import (
     SettingsDependency,
     get_redis_connection,
     get_request_counter,
-    get_settings,
 )
+from wink_test.settings import Settings
 
 
 class BalancerAPIRoute(APIRoute):
@@ -42,7 +42,6 @@ class BalancerAPIRoute(APIRoute):
             try:
                 return await original_route_handler(request)
             except RequestValidationError as exc:
-                print(exc)
                 for error in exc.errors():
                     if self.is_missing_query_param_error(error):
                         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
@@ -52,16 +51,15 @@ class BalancerAPIRoute(APIRoute):
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    settings = get_settings()
-    redis_connection = get_redis_connection(settings)  # type: ignore
+async def lifespan(app: FastAPI, settings: Settings):
+    redis_connection = get_redis_connection(settings)
     counter = get_request_counter(redis_connection)
     if counter:
         await counter.reset()
     yield
 
 
-router = APIRouter(route_class=BalancerAPIRoute, lifespan=lifespan)
+router = APIRouter(route_class=BalancerAPIRoute)
 
 
 @router.get("/")
@@ -70,9 +68,6 @@ async def balancer_root(
     request_counter: RequestCounterDependency,
     settings: SettingsDependency,
 ):
-    if not settings or not request_counter:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
     assert settings.cdn_host.host
     assert video.host
 

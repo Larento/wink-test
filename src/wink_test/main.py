@@ -1,15 +1,17 @@
 from fastapi import FastAPI, Response, status
 from fastapi.concurrency import asynccontextmanager
 
-from wink_test.dependencies import get_settings
-from wink_test.routers import balancer_api
+from wink_test.dependencies import get_app_state, get_settings
+from wink_test.routers import balancer_api, balancer_settings_api
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    settings = get_settings()
-    if not settings:
-        raise ValueError("Сервису не были предоставлены необходимые настройки, запуск невозможен.")
-    yield
+    settings = await get_settings()
+    app_state = get_app_state()
+    async with balancer_api.lifespan(app, settings):
+        async with balancer_settings_api.lifespan(app, settings, app_state):
+            yield
 
 
 app = FastAPI(lifespan=lifespan)
@@ -21,3 +23,4 @@ def health_check():
 
 
 app.include_router(balancer_api.router)
+app.include_router(balancer_settings_api.router)
