@@ -1,7 +1,5 @@
 import asyncio
-import math
 import re
-from fractions import Fraction
 from functools import lru_cache
 from typing import Annotated, Any, Callable, Coroutine
 
@@ -11,8 +9,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 from pydantic import HttpUrl
 
-from wink_test.dependencies import get_settings
-from wink_test.settings import Settings
+from wink_test.balancer import calculate_should_redirect_to_cdn
+from wink_test.dependencies import SettingsDependency
 
 
 class Counter:
@@ -81,7 +79,7 @@ router = APIRouter(route_class=BalancerAPIRoute)
 async def balancer_root(
     video: HttpUrl,
     request_counter: Annotated[Counter, Depends(get_request_counter)],
-    settings: Annotated[Settings | None, Depends(get_settings)],
+    settings: SettingsDependency,
 ):
     if not settings:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -106,24 +104,3 @@ async def balancer_root(
         headers={"location": str(redirect_url)},
         status_code=status.HTTP_301_MOVED_PERMANENTLY,
     )
-
-
-async def calculate_should_redirect_to_cdn(request_index: int, redirect_ratio: Fraction) -> bool:
-    """
-    Определяет, делать ли редирект на CDN.
-
-    :param request_index: порядковый номер запроса (начиная с 0).
-    :param redirect_ratio: отношение количества редиректов на CDN и на origin сервера.
-    """
-
-    requests_count_per_block = redirect_ratio.numerator + redirect_ratio.denominator
-    cdn_requests_count = redirect_ratio.numerator
-    origin_servers_requests_count = redirect_ratio.denominator
-    relative_request_index = request_index % requests_count_per_block
-
-    if cdn_requests_count >= origin_servers_requests_count:
-        do_origin_server_request_at_every = math.floor(1 + cdn_requests_count / origin_servers_requests_count)
-        return (relative_request_index + 1) % do_origin_server_request_at_every != 0
-    else:
-        do_cdn_request_at_every = math.floor(1 + origin_servers_requests_count / cdn_requests_count)
-        return (relative_request_index + 1) % do_cdn_request_at_every == 0

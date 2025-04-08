@@ -4,7 +4,8 @@ from fractions import Fraction
 from pydantic import HttpUrl, ValidationError
 
 from tests.utils import patch_environ
-from wink_test.settings import Settings, parse_redirect_ratio
+from wink_test.balancer import parse_redirect_ratio
+from wink_test.settings import Settings
 
 
 class TestSettingsWithPythonValues(unittest.TestCase):
