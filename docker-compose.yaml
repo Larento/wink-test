@@ -1,0 +1,28 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - db
+    links:
+      - redis
+      - db
+    ports:
+      - 127.0.0.1:3000:80
+    environment:
+      BALANCER_CDN_HOST: "http://cdn-host"
+      BALANCER_REDIRECT_RATIO: "3:1"
+      BALANCER_REDIS_URL: "redis://redis"
+      BALANCER_DATABASE_URL: "postgres://db"
+      BALANCER_DATABASE_USER: "balancer"
+      BALANCER_DATABASE_PASSWORD: "postgres"
+      BALANCER_DATABASE_NAME: "balancer"
+  redis:
+    extends:
+      file: docker-compose.external-services.yaml
+      service: redis
+  db:
+    extends:
+      file: docker-compose.external-services.yaml
+      service: db
