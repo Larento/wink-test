@@ -1,0 +1,3 @@
+CREATE USER balancer;
+CREATE DATABASE balancer;
+GRANT ALL PRIVILEGES ON DATABASE balancer TO balancer;
