@@ -77,7 +77,12 @@ docstring-code-line-length = "dynamic"
 distribution = false
 
 [tool.pdm.scripts]
-dev = "fastapi dev src/wink_test/main.py"
+redis-dev = "docker compose -f docker-compose.external-services.yaml up -d"
+service-dev = "fastapi dev src/wink_test/main.py"
+
+dev.env = { BALANCER_REDIS_URL = "redis://localhost" }
+dev.composite = ["redis-dev", "service-dev"]
+
 test.cmd = "python -m unittest discover tests -p '*.py'"
 test.env = { PYTHONPATH = "${PYTHONPATH}:${PDM_PROJECT_ROOT}/src" }
 rps-test.cmd = "python -m tests.rps_test"
