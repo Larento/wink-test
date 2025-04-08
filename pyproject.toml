@@ -9,6 +9,7 @@ dependencies = [
     "fastapi-cli>=0.0.7",
     "gunicorn>=23.0.0",
     "asyncpg>=0.30.0",
+    "redis>=5.2.1",
 ]
 requires-python = "==3.13.*"
 readme = "README.md"
