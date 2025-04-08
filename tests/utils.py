@@ -1,12 +1,15 @@
 import asyncio
 import os
+import subprocess
+from contextlib import contextmanager
+from pathlib import Path
 from unittest import mock
 
 import aiohttp
 import aiohttp.client_exceptions
 import aiohttp.http_exceptions
 
-__all__ = ("patch_environ", "get_random_video_url", "wait_for_balancer_api")
+__all__ = ("patch_environ", "get_random_video_url", "wait_for_balancer_api", "external_services")
 
 
 def patch_environ(**kwargs: str):
@@ -41,3 +44,45 @@ async def wait_for_balancer_api(client: aiohttp.ClientSession):
             await asyncio.sleep(0.5)
             continue
     raise TimeoutError
+
+
+external_services_compose_file_path = Path(__file__).parent.parent / "docker-compose.external-services.yaml"
+
+external_services_compose_up_cmd: list[str] = [
+    "docker",
+    "compose",
+    "-f ",
+    str(external_services_compose_file_path),
+    "up",
+    "-d",
+]
+
+external_services_compose_down_cmd: list[str] = [
+    "docker",
+    "-f ",
+    str(external_services_compose_file_path),
+    "down",
+]
+
+
+@contextmanager
+def external_services():
+    """
+    Менеджер контекста для запуска внешних сервисов (Redis) через Docker Compose.
+    """
+
+    try:
+        process = subprocess.run(
+            " ".join(external_services_compose_up_cmd),
+            stdout=subprocess.DEVNULL,
+            shell=True,
+        )
+        process.check_returncode()
+        yield
+    finally:
+        subprocess.run(
+            " ".join(external_services_compose_down_cmd),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            shell=True,
+        )

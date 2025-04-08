@@ -6,18 +6,25 @@ import asyncio
 import itertools
 import math
 import os
+import resource
 import statistics
 import subprocess
 import time
 from concurrent import futures
-from pprint import pprint
 
 import aiohttp
 
-from tests.utils import get_random_video_url, wait_for_balancer_api
+from tests.utils import external_services, get_random_video_url, wait_for_balancer_api
 
 balancer_host = "127.0.0.1:3000"
-balancer_env = {**os.environ.copy(), "BALANCER_CDN_HOST": "http://cdn-host", "BALANCER_REDIRECT_RATIO": "3:1"}
+
+balancer_env = {
+    **os.environ.copy(),
+    "BALANCER_CDN_HOST": "http://cdn-host",
+    "BALANCER_REDIRECT_RATIO": "3:1",
+    "BALANCER_REDIS_URL": "redis://localhost",
+}
+
 balancer_start_cmd = [
     "gunicorn",
     "wink_test.main:app",
@@ -51,10 +58,8 @@ async def make_requests(index_range: range):
                 case _:
                     pass
 
-        pprint(exc)
-
         if len(exc) / len(results) > 0.1:
-            raise ValueError
+            raise ValueError("Too many errors in requests.")
 
 
 def requests_maker_thread_main(index_range: range):
@@ -114,4 +119,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Повышаем лимит открытых соединений, чтобы не было ошибок 'Too many files open'
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if soft < 1024:
+        resource.setrlimit(resource.RLIMIT_NOFILE, (1024, hard))
+
+    with external_services():
+        main()

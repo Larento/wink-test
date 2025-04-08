@@ -1,7 +1,7 @@
 import unittest
 from fractions import Fraction
 
-from pydantic import HttpUrl, ValidationError
+from pydantic import HttpUrl, RedisDsn, ValidationError
 
 from tests.utils import patch_environ
 from wink_test.balancer import parse_redirect_ratio
@@ -14,29 +14,53 @@ class TestSettingsWithPythonValues(unittest.TestCase):
     """
 
     def test_well_formed_values(self):
-        settings = Settings(cdn_host=HttpUrl("http://cdn-domain"), redirect_ratio=parse_redirect_ratio("10:1"))
+        settings = Settings(
+            cdn_host=HttpUrl("http://cdn-domain"),
+            redirect_ratio=parse_redirect_ratio("10:1"),
+            redis_url=RedisDsn("redis://localhost"),
+        )
         self.assertEqual(settings.cdn_host.host, "cdn-domain")
         self.assertEqual(settings.redirect_ratio, Fraction(10, 1))
 
     def test_ill_formed_value_for_cdn_host(self):
         with self.assertRaises(ValidationError):
-            Settings(cdn_host=HttpUrl("123456789"), redirect_ratio=parse_redirect_ratio("10:1"))
+            Settings(
+                cdn_host=HttpUrl("123456789"),
+                redirect_ratio=parse_redirect_ratio("10:1"),
+                redis_url=RedisDsn("redis://localhost"),
+            )
 
     def test_non_http_cdn_host(self):
         with self.assertRaises(ValidationError):
-            Settings(cdn_host=HttpUrl("ftp://cdn-domain"), redirect_ratio=parse_redirect_ratio("10:1"))
+            Settings(
+                cdn_host=HttpUrl("ftp://cdn-domain"),
+                redirect_ratio=parse_redirect_ratio("10:1"),
+                redis_url=RedisDsn("redis://localhost"),
+            )
 
     def test_ill_formed_value_for_redirect_ratio(self):
         with self.assertRaises(ValidationError):
-            Settings(cdn_host=HttpUrl("123456789"), redirect_ratio=parse_redirect_ratio("abcdef"))
+            Settings(
+                cdn_host=HttpUrl("123456789"),
+                redirect_ratio=parse_redirect_ratio("abcdef"),
+                redis_url=RedisDsn("redis://localhost"),
+            )
 
     def test_negative_cdn_redirect_count(self):
         with self.assertRaises(ValidationError):
-            Settings(cdn_host=HttpUrl("http://cdn-domain"), redirect_ratio=parse_redirect_ratio("-10:1"))
+            Settings(
+                cdn_host=HttpUrl("http://cdn-domain"),
+                redirect_ratio=parse_redirect_ratio("-10:1"),
+                redis_url=RedisDsn("redis://localhost"),
+            )
 
     def test_negative_origin_servers_redirect_count(self):
         with self.assertRaises(ValidationError):
-            Settings(cdn_host=HttpUrl("http://cdn-domain"), redirect_ratio=parse_redirect_ratio("10:-1"))
+            Settings(
+                cdn_host=HttpUrl("http://cdn-domain"),
+                redirect_ratio=parse_redirect_ratio("10:-1"),
+                redis_url=RedisDsn("redis://localhost"),
+            )
 
 
 class TestSettingsFromEnv(unittest.TestCase):
@@ -44,33 +68,55 @@ class TestSettingsFromEnv(unittest.TestCase):
     Настройки устанавливаются из значений переменных окружения.
     """
 
-    @patch_environ(BALANCER_CDN_HOST="http://cdn-domain", BALANCER_REDIRECT_RATIO="10:1")
+    @patch_environ(
+        BALANCER_CDN_HOST="http://cdn-domain",
+        BALANCER_REDIRECT_RATIO="10:1",
+        BALANCER_REDIS_URL="redis://localhost",
+    )
     def test_well_formed_values(self):
         settings = Settings()  # type: ignore
         self.assertEqual(settings.cdn_host.host, "cdn-domain")
         self.assertEqual(settings.redirect_ratio, Fraction(10, 1))
 
-    @patch_environ(BALANCER_CDN_HOST="123456789", BALANCER_REDIRECT_RATIO="10:1")
+    @patch_environ(
+        BALANCER_CDN_HOST="123456789",
+        BALANCER_REDIRECT_RATIO="10:1",
+        BALANCER_REDIS_URL="redis://localhost",
+    )
     def test_ill_formed_value_for_cdn_host(self):
         with self.assertRaises(ValueError):
             Settings()  # type: ignore
 
-    @patch_environ(BALANCER_CDN_HOST="ftp://cdn-domain", BALANCER_REDIRECT_RATIO="10:1")
+    @patch_environ(
+        BALANCER_CDN_HOST="ftp://cdn-domain", BALANCER_REDIRECT_RATIO="10:1", BALANCER_REDIS_URL="redis://localhost"
+    )
     def test_non_http_cdn_host(self):
         with self.assertRaises(ValueError):
             Settings()  # type: ignore
 
-    @patch_environ(BALANCER_CDN_HOST="http://cdn-domain", BALANCER_REDIRECT_RATIO="abcdef")
+    @patch_environ(
+        BALANCER_CDN_HOST="http://cdn-domain",
+        BALANCER_REDIRECT_RATIO="abcdef",
+        BALANCER_REDIS_URL="redis://localhost",
+    )
     def test_ill_formed_value_for_redirect_ratio(self):
         with self.assertRaises(ValidationError):
             Settings()  # type: ignore
 
-    @patch_environ(BALANCER_CDN_HOST="http://cdn-domain", BALANCER_REDIRECT_RATIO="-10:1")
+    @patch_environ(
+        BALANCER_CDN_HOST="http://cdn-domain",
+        BALANCER_REDIRECT_RATIO="-10:1",
+        BALANCER_REDIS_URL="redis://localhost",
+    )
     def test_negative_cdn_redirect_count(self):
         with self.assertRaises(ValidationError):
             Settings()  # type: ignore
 
-    @patch_environ(BALANCER_CDN_HOST="http://cdn-domain", BALANCER_REDIRECT_RATIO="10:-1")
+    @patch_environ(
+        BALANCER_CDN_HOST="http://cdn-domain",
+        BALANCER_REDIRECT_RATIO="10:-1",
+        BALANCER_REDIS_URL="redis://localhost",
+    )
     def test_negative_origin_servers_redirect_count(self):
         with self.assertRaises(ValidationError):
             Settings()  # type: ignore

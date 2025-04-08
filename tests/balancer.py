@@ -1,9 +1,10 @@
 import unittest
 from collections import Counter
+from typing import Any
 
 import httpx
 
-from tests.utils import get_random_video_url, patch_environ
+from tests.utils import external_services, get_random_video_url, patch_environ
 from wink_test.main import app
 
 
@@ -12,7 +13,13 @@ class TestBalancerRatio(unittest.IsolatedAsyncioTestCase):
     Тестирование распределения запросов на соответствие настроенному отношению редиректов на CDN/origin сервера.
     """
 
-    @patch_environ(BALANCER_CDN_HOST="http://cdn-domain", BALANCER_REDIRECT_RATIO="3:1")
+    def run(self, result: Any = None):
+        with external_services():
+            super().run(result)
+
+    @patch_environ(
+        BALANCER_CDN_HOST="http://cdn-domain", BALANCER_REDIRECT_RATIO="3:1", BALANCER_REDIS_URL="redis://localhost"
+    )
     async def test_ratio(self):
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
