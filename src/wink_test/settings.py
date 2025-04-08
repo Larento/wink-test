@@ -9,7 +9,7 @@ class Settings(BalancerSettings, BaseSettings):
     Настройки приложения.
     """
 
-    model_config = SettingsConfigDict(env_prefix="balancer_")
+    model_config = SettingsConfigDict(env_prefix="balancer_", frozen=True)
 
     """
     Отношение редиректов на CDN и origin сервера.
